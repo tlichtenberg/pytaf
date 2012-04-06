@@ -2,3 +2,9 @@ Python 3.2 Test Automation Framework
 a lightweight, general-purpose test automation framework
 2012.04.05
 tom lichtenberg
+
+requirements:
+Python3.2
+py3selenium2
+PyMySQL3.0,4
+beautifulsoup4
