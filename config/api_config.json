@@ -1,0 +1,27 @@
+{
+   "settings":
+   {
+    "url": "127.0.0.1"
+   },
+  "tests":
+   {
+      "includes":
+      [
+          { "module": "apitest",
+            "methods": 
+            [
+               { "name": "test_api",  "params":  {} }      
+            ]
+         }
+     ],
+     "excludes":
+      [
+          { "module": "apitest",
+            "methods": 
+            [   
+               { "name": "test_exclude",  "params":  {} }        
+            ]
+         }
+     ]  
+   }
+ }
