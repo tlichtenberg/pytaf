@@ -10,13 +10,13 @@ from selenium.webdriver.common.desired_capabilities import DesiredCapabilities
 
 def init_selenium(settings):
     browser = settings.get('browser','*chrome')
-    test_host = settings.get('test_host','localhost')
-    test_port = settings.get('test_port', '4444')
+    selenium_host = settings.get('selenium_host','localhost')
+    selenium_port = settings.get('selenium_port', '4444')
     version = settings.get('version', '10')
     platform = settings.get('platform', 'WINDOWS')
     driver = None
     dc = DesiredCapabilities()
-    webdriver_url = "http://%s:%s/wd/hub" % (test_host, test_port)
+    webdriver_url = "http://%s:%s/wd/hub" % (selenium_host, selenium_port)
     print("webdriver_url = %s" % webdriver_url)
     try:
         if browser.find("firefox") >= 0 or browser.find("*chrome") >= 0:
@@ -47,9 +47,14 @@ def init_selenium(settings):
     
 def test_web(args = {}):
     try:
+        # initialize the error strings array
         errors = []
+
+        # parse the global settings and test method params from the args provided
         settings = args['settings']
         params = args['params']
+
+        # some selenium specific test stuff ...
         goto_url = params.get('url', 'http://www.google.com')
         driver = init_selenium(settings)
         driver.get(goto_url)
@@ -58,8 +63,12 @@ def test_web(args = {}):
             errors.append('did not find the google input element')
         else:
             print('found the google input element')
+
+        # call the utility method to verify the absence or errors or pack up the error messages if any
         return pytaf_utils.verify(len(errors) == 0, 'there were errors: %s' % errors)     
     except:
+        # fail on any exception and include a stack trace
         return (False, pytaf_utils.formatExceptionInfo())
     finally:
+        # cleanup
         driver.quit()

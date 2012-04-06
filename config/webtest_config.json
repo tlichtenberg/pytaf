@@ -2,8 +2,8 @@
    "settings":
    {
     "url": "http://www.google.com/",   
-    "test_host": "localhost",  
-    "test_port": "4444",
+    "selenium_host": "localhost",  
+    "selenium_port": "4444",
     "browser": "*firefox"
    },
   "tests":

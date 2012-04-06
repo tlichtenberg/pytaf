@@ -3,8 +3,173 @@ a lightweight, general-purpose test automation framework
 2012.04.05
 tom lichtenberg
 
-requirements:
+-------------
+Requirements:
+-------------
 Python3.2
-py3selenium2
-PyMySQL3.0,4
-beautifulsoup4
+
+----------------------
+Optional Dependencies:
+----------------------
+
+py3selenium2 => for running Selenium/WebDriver tests
+PyMySQL3.0.4 => for storing test results in a MySQL database
+beautifulsoup4 => for lovely parsing of XML and/or HTML
+
+------------
+Setup notes:
+------------
+
+installed on 64-bit Windows 7:
+  Python 3.2.2 from http://www.python.org/getit/releases/3.2.2/
+  py3selenium2 from http://permalink.gmane.org/gmane.comp.web.selenium.devel/7933
+    (hopefully an official python3 binding for selenium will appear at some point, this one is missing some things)
+  pymysql from http://code.google.com/p/p
+
+------------
+Usage notes:
+------------
+Required: set an environment variable named PYTAF_HOME to the main pytaf directory
+
+to make sure you have things up and running, do the following:
+
+in a terminal window
+   cd to %PYTAF_HOME%/src
+   c:\python32\python pytaf.py -c api_config.json -t test_api
+
+you should see more or less this output:
+ ------------
+   starting test: test_api
+   start time:    2012-04-06 11:31:52.425000
+  ------------
+  some function you got here!
+  RESULT ===> PASSED: test_api
+  ---------------
+  ---------------
+  Tests Run: 1
+  Passed:    1
+  Failed:    0
+  PASSED test_api
+
+--------------------
+Configuration Files:
+--------------------
+
+You must pass a -c config_file.json argument to pytaf, and that file must exist in the PYTAF_HOME/config directory
+
+The config file contains two sections, a global settings section, and a tests section. For example:
+
+{
+   "settings":
+   {
+    "url": "127.0.0.1"
+   },
+   "tests":
+   {
+      "includes":
+      [
+          { 
+            "module": "apitest",
+            "methods": 
+            [
+               { "name": "test_api",  "params":  {} }      
+            ]
+         }
+     ]
+   }
+ }
+
+A python dictionary object is passed along to each test method,
+containing the global settings portion of the config file, and 
+the test method's specific params dictionary.
+
+The tests section of the config file may include an optional "excludes"
+element, which looks just like the "includes" but contains modules and
+tests you may not want to run just yet.
+
+-------------------------------------
+Command-line configuration overrides:
+-------------------------------------
+
+A number of global configuration settings can be overridden from the command-line.
+This can be very useful, especially for Api or Selenium/WebDriver tests, where you might
+want to direct tests to a url or use a different browser than is specified in the config file.
+ 
+For example, to run the simple web test using Chrome instead of Firefox:
+   c:\python32\python pytaf.py -c webtest_config.json -t test_web -b *googlechrome
+(note, this test assumes you have a Selenium server running on localhost:4444)
+
+You can also use the -t option to specify one or more (comma-separated) tests from the
+config file, to run only a subset of the tests defined. Conversely, you can use the -e
+option to exclude one or more (comma-separated) tests from the run.
+
+-b, --browser is used for Selenium/Webdriver tests to specify the browser type
+-c, --config is required and all other arguments are optional. The config file must reside in $PYTAF_HOME/config
+-d, --db defines whether to write the test results to a database. the default is False
+-e, --excluded to optionally exclude a test or tests (comma-separated list)
+-l, --logfile redirects stdout to the specified log file
+-m, --modules if specified denotes a comma-separated list of modules to be included from the config file
+-s, --selenium_server is used to override the selenium_host:selenium_port settings for the Selenium Server
+-t, --test is set to None (by default), in which case pytaf will attempt to run all the 
+tests in the test config file, otherwise it will attempt to run the test(s) specified 
+(multiple tests are set with a comma-separated list of their names)
+-u, --url is used to override the url in the config file settings. 
+
+---------------------
+Test Method Template:
+---------------------
+pytaf does not enforce a strict unit testing methodology. Instead, it can run any python method in any
+python module, and all it asks in return is a tuple containing a boolean and a string, which 
+tell the framework whether the test passed or failed (True or False) and, if failed, an error
+message to report.
+
+The sample tests included in the project are written to the same convention, but only the
+return tuple format is enforced by pytaf. The convention followed here has been proven useful,
+so you may want to give it a try. 
+
+Essentially, the entire test is contained within a try block - any exception at all will be trapped
+and reported as a test failure with a stack trace. Therefore there is no need for assert statements.
+Instead, any non-fatal errors found along the way are added, as strings, to an 'errors' array. If
+the errors array is not empty, the test will fail and all of the errors will be returned to pytaf.
+Using this approach, you can easily track multiple errors in a test case instead of only one at a 
+time, as you get when using explicit asserts.
+
+Finally, a finally block is implemented for any cleanup operations.
+
+For example:
+
+def test_web(args = {}):
+    try:
+        # initialize the error strings array
+        errors = []
+
+        # parse the global settings and test method params from the args provided
+        settings = args['settings']
+        params = args['params']
+
+        # some selenium specific test stuff ...
+        goto_url = params.get('url', 'http://www.google.com')
+        driver = init_selenium(settings)
+        driver.get(goto_url)
+        element = driver.find_element_by_id('gbqfq')
+        if element == None:
+            errors.append('did not find the google input element')
+        else:
+            print('found the google input element')
+
+        # call the utility method to verify the absence or errors or pack up the error messages if any
+        return pytaf_utils.verify(len(errors) == 0, 'there were errors: %s' % errors)     
+    except:
+        # fail on any exception and include a stack trace
+        return (False, pytaf_utils.formatExceptionInfo())
+    finally:
+        # cleanup
+        driver.quit()
+
+
+
+
+
+
+
+

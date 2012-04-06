@@ -27,6 +27,7 @@ def main():
     parser.add_option('-e', '--excluded', default=None, type='string')
     parser.add_option('-l', '--logfile', default=None, type='string')
     parser.add_option('-m', '--modules', default=None, type='string')
+    parser.add_option('-s', '--selenium_server', default=None, type='string')
     parser.add_option('-t', '--test', default=None, type='string')  
     parser.add_option('-u', '--url', default=None, type='string')    
     options, args = parser.parse_args()
@@ -69,6 +70,14 @@ def main():
     # command-line -b overrides config file for browser
     if browser != None:
         config['settings']['browser'] = browser
+
+    if options.selenium_server != None:
+        if options.selenium_server.find(":") >= 0:
+            g = options.selenium_server.split(":")
+            config['settings']['selenium_host'] = g[0]
+            config['settings']['selenium_port'] = int(g[1])
+        else:
+            config['settings']['selenium_host'] = options.selenium_server
 
     settings = config['settings']    
         
