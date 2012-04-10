@@ -1,0 +1,31 @@
+{
+   "settings":
+   {
+    "url": "127.0.0.1",   
+    "load_test_settings": { "duration": 10, "max_threads": 50, "ramp_steps": 10, "ramp_interval": 10, "throttle_rate": 1 },
+    "load_mix": 1
+   },
+  "tests":
+   {
+      "includes":
+      [
+          { "module": "apitest",
+            "methods": 
+            [
+               { "name": "test_api",  "params":  {} }           
+            ]
+         }
+     ],
+     "excludes":
+      [
+          { "module": "apitest",
+            "methods": 
+            [   
+               { "name": "test_html_get",  "params":  {} },
+               { "name": "test_simple_get",  "params":  {} },
+               { "name": "test_simple_post",  "params":  {} }           
+            ]
+         }
+     ]  
+   }
+ }

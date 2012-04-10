@@ -11,6 +11,7 @@ import pytaf_utils
 import time
 import datetime
 import _thread
+from load_runner import LoadRunnerManager
 
 DEBUG = sys.flags.debug
     
@@ -29,7 +30,9 @@ class Pytaf:
         parser.add_option('-m', '--modules', default=None, type='string')
         parser.add_option('-s', '--selenium_server', default=None, type='string')
         parser.add_option('-t', '--test', default=None, type='string')  
-        parser.add_option('-u', '--url', default=None, type='string')    
+        parser.add_option('-u', '--url', default=None, type='string')  
+        parser.add_option('-y', '--test_type', default=None, type='string') 
+        parser.add_option('-z', '--loadtest_settings', default=None, type='string')     
         options, args_out = parser.parse_args(args)
     
         if options.config_file == None:
@@ -92,12 +95,33 @@ class Pytaf:
             modules_array = pytaf_utils.get_all_modules(config)
         else: # only load the specified module(s) from the config file
             modules_array = modules.split(",")
+        if DEBUG: print('modules: %s' % modules_array)
         mapped_modules = map(__import__, modules_array)
         
         passed = 0
         failed = 0
        
-        if test != None:  # if --test is specified, try and get its params and run it
+        if options.test_type == 'load':
+            ''' 
+             the command-line may override load_test_settings with -z --loadtest_settings
+             in the form of duration:max_threads:ramp_steps:ramp_interval:throttle_rate
+             e.g. 3600:500:10:30:1
+             which would run the load test for 1 hour (3600 seconds)
+             ramping up to a total of 500 threads in 10 steps (each step would add 50 threads (500/10))
+             and these batches of threads would be added in 30 second installments (approximately)
+             the final value (throttle_rate=1) is used to brake the entire load test operation by sleeping for 
+             that amount (in seconds) between chunks of test case allocations
+            '''       
+            if options.loadtest_settings != None:
+                p = options.loadtest_settings.split(":")
+                if len(p) == 5:
+                    config['settings']['load_test_settings'] = { "duration": int(p[0]), "max_threads": int(p[1]), "ramp_steps": int(p[2]), "ramp_interval": int(p[3]), "throttle_rate": int(p[4]) }          
+                else:
+                    print('load test settings are not complete. they must be in the form of duration:max_threads:ramp_steps:ramp_interval:throttle_rate')
+                    sys.exit(-1)
+            # now start the load test
+            passed, failed = self.do_load_test(mapped_modules, config)
+        elif test != None:  # if --test is specified, try and get its params and run it
             if test.find(",") >= 0: # multiple tests
                 ts = test.split(",")
                 for i in range(0, len(ts)):
@@ -173,7 +197,7 @@ class Pytaf:
         test_was_found = False
         for m in modules:
             try:
-                # if DEBUG: print "do test %s from module %s" % (test, m)
+                if DEBUG: print("do test %s from module %s" % (test, m))
                 methodToCall = getattr(m, test)
                 found_module = str(m)
                 test_was_found = True
@@ -186,9 +210,9 @@ class Pytaf:
                 end_time = int(time.time())
                 elapsed_time = end_time - start_time
                 if DEBUG: print("result: %s" % result)
-            except:
-                #if DEBUG: print "exception from methodToCall"
-                #if DEBUG: print sys.exc_info()[0]
+            except Exception as inst:
+                if DEBUG: print("exception from methodToCall")
+                if DEBUG: print(str(inst))
                 continue
             
         if test_was_found == False:
@@ -224,6 +248,27 @@ class Pytaf:
             print(pytaf_utils.formatExceptionInfo())
             
         return status
+    
+    def do_load_test(self, modules, config):
+        '''
+        intent is to run tests randomly (on multiple threads) calculated by threads and rate, 
+        for the period of duration (in minutes)
+        '''  
+           
+        # get list of all test names from the config file
+        tests = pytaf_utils.get_all_tests(config, modules, True)
+        if DEBUG: print('found these tests: %s' % tests)
+    
+        manager = LoadRunnerManager(config, tests)
+        tests_run, passed, failed = manager.start() 
+        
+        count = 0
+        for (t,c) in tests_run.items():
+            count = count + c
+            print(c, t)
+        print("------------\n%s tests run" % str(count))
+        
+        return passed, failed
                                  
 if __name__ == "__main__":
     pytaf = Pytaf()

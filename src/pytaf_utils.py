@@ -67,7 +67,7 @@ def get_params(config, test):
             test_name = included_methods[k]['name']
             if test_name == test:
                 params = included_methods[k]['params']
-                print("test case params: ", params)
+                if DEBUG: print("test case params: ", params)
                 return params
     return None
 
