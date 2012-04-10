@@ -21,7 +21,7 @@ class ApiLib:
         self.field = None
         
     def some_function(self):
-        print("some function you got here!")
+        print("this is one dandy function you got here!")
         return True
     
     def do_get(self, url, u, settings={}, headers={}, https=True):
@@ -84,7 +84,7 @@ class ApiLib:
        
     def process_url(u):
         '''
-            make the url python-http-happy
+            make the url python-http-happy by stripping off the front part
         '''
         if u.find("http://") >= 0:
             u = u[7:]

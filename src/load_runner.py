@@ -11,6 +11,9 @@ import queue
 DEBUG = sys.flags.debug
 
 class LoadRunnerManager:
+    ''' instantiates a ThreadPool object and adds LoadRunner instances to the pool's queue in 
+        accordance with the load test settings provided in the config file
+    '''
     def __init__(self, config, tests):
         self.config = config
         self.settings = config['settings']      
@@ -28,13 +31,14 @@ class LoadRunnerManager:
         
     def passed(self):
         self.tests_passed = self.tests_passed + 1
-        #print('passed = %s' % self.tests_passed)
         
     def failed(self):
         self.tests_failed = self.tests_failed + 1
-        #print('failed = %s' % self.tests_failed)
         
     def start(self):
+        ''' initializes a ThreadPool and then, while time is not yet up, periodically adds LoadRunner
+            tasks to the ThreadPool's job queue 
+        '''
         initial_threads = self.max_threads / self.ramp_steps
         pool = ThreadPool(initial_threads)
         the_last_time = the_time = time.time()
@@ -45,7 +49,7 @@ class LoadRunnerManager:
                 test = choice(self.tests)
                 t = LoadRunner(self, self.config, test, self.throttle_rate)
                 pool.addJob(t.run)
-                time.sleep( float(self.throttle_rate) / 10.0) # TODO: twiddle with this
+                time.sleep( float(self.throttle_rate) / 10.0) # twiddle with this to control the rate
                 try:
                     t = self.tests_run[test]
                     self.tests_run[test] = t + 1
@@ -73,14 +77,13 @@ class LoadRunnerManager:
         return self.tests_run, self.tests_passed, self.tests_failed
                      
 class LoadRunner():
+    ''' each LoadRunner object invokes one test case as it is instantiated from the ThreadPool's task queue 
+        and returns the results to the LoadRunnerManager
+    '''
     def __init__(self, manager, config, test, throttle_rate):
         self.manager = manager
-        # TODO: the modules import mpa doesn't seem to pass in python3 as they did in python2, therefore re-creating them here in 
-        # each thread instead of being able to pass it in from LoadRunnerManager
         modules_array = pytaf_utils.get_all_modules(config)
-        #if DEBUG: print('modules: %s' % modules_array)
-        self.modules = map(__import__, modules_array)
-        
+        self.modules = map(__import__, modules_array)        
         self.config = config
         self.settings = config['settings']
         self.test = test
@@ -93,9 +96,10 @@ class LoadRunner():
             try:
                 from pytaf import Pytaf
                 self.pytaf = Pytaf()
+                ''' instantiate the Pytaf.do_test method using reflection and then invoke it with parameters '''
                 methodToCall = getattr(Pytaf, 'do_test')
                 result = methodToCall(self.pytaf, self.modules, self.settings, self.test, params)                    
-                if result == True: # any return value except False is PASSED
+                if result == True:
                     self.manager.passed()
                 else:
                     self.manager.failed()
@@ -107,7 +111,7 @@ class LoadRunner():
                 time.sleep(float(self.throttle_rate))
                 
 class ThreadPool: 
-    "A pool of worker threads with tasks in queue" 
+    "A pool of worker threads with tasks in its queue" 
     def __init__(self, max_threads=10): 
         self.queue = queue.Queue() 
         self.threads = [] 
@@ -119,12 +123,14 @@ class ThreadPool:
             self.threads.append(_thread.start_new_thread(self.threadFunction,())) 
         
     def addThreads(self, num_threads=1):
+        ''' adds more threads to the pool '''
         if DEBUG: print('ThreadPool: adding %s threads' % num_threads)
         self.max_threads = self.max_threads + num_threads
         for i in range(int(num_threads)):
             self.threads.append(_thread.start_new_thread(self.threadFunction,())) 
     
     def addJob(self,function,*args,**kwargs): 
+        ''' puts a task into the queue '''
         try:
             if self.queue.qsize() < self.max_threads:
                 self.queue.put((function,args,kwargs), False)
@@ -132,11 +138,11 @@ class ThreadPool:
             pass # queue is full, let it go
     
     def threadFunction(self): 
+        ''' fetches a task from the queue and invokes it '''
         while (not self.stopping): 
             try:
                 task = self.queue.get(False) # don't block, throws exception is queue is full. ignoring that
                 if (task != None): 
-                    #if DEBUG: print('thread id %s calling task %s' % (_thread.get_ident(), task))
                     function,args,kwargs = task 
                     function(*args,**kwargs) 
             except Exception as inst:

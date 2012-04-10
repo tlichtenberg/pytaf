@@ -16,7 +16,9 @@ from load_runner import LoadRunnerManager
 DEBUG = sys.flags.debug
     
 class Pytaf:
+    ''' Python3 test driver capable of running any arbitrary python methods in modules defined by json config files '''
     def __init__(self):
+        ''' results object is used for collecting test results for output and database reporting '''
         self.results = []
         
     def setup(self, args):
@@ -38,11 +40,6 @@ class Pytaf:
         if options.config_file == None:
             print('-c (--config_file) is required')
             sys.exit(-1)
-            
-        browser = options.browser
-        modules = options.modules
-        test = options.test
-        url = options.url
         
         if options.logfile != None:
             ''' redirect stdout to the logfile '''
@@ -50,10 +47,12 @@ class Pytaf:
             sys.stdout = f
         
         if options.excluded != None:
+            ''' build a list of tests explicitly excluded from the command-line option '''
             excluded_list = options.excluded.split(',') # array of excluded test method names
         else:
             excluded_list = None
         
+        ''' load the config file '''
         try:
             config_path = os.getenv('PYTAF_HOME') + os.sep + "config" + os.sep
             f = open("%s%s" % (config_path,options.config_file), 'r').read()
@@ -68,18 +67,16 @@ class Pytaf:
             db_config = json.loads(f2)
         except:
             db_config = {}
-         
-        # pass along write_to_db and webdriver in settings   
-        config['settings']['write_to_db'] = pytaf_utils.str2bool(options.db)   
-               
+                       
         # command-line -u overrides config file for url
-        if url != None: 
-            config['settings']['url'] = url # for browser tests
+        if options.url != None: 
+            config['settings']['url'] = options.url # for browser tests
             
         # command-line -b overrides config file for browser
-        if browser != None:
-            config['settings']['browser'] = browser
+        if options.browser != None:
+            config['settings']['browser'] = options.browser
     
+        # command-line -s option overrides the selenium_server host and port settings
         if options.selenium_server != None:
             if options.selenium_server.find(":") >= 0:
                 g = options.selenium_server.split(":")
@@ -88,13 +85,14 @@ class Pytaf:
             else:
                 config['settings']['selenium_host'] = options.selenium_server
     
+        # reset the settings object for passing on to test methods
         settings = config['settings']    
             
         # dynamically import all modules found in the config file
-        if modules == None:
+        if options.modules == None:
             modules_array = pytaf_utils.get_all_modules(config)
         else: # only load the specified module(s) from the config file
-            modules_array = modules.split(",")
+            modules_array = options.modules.split(",")
         if DEBUG: print('modules: %s' % modules_array)
         mapped_modules = map(__import__, modules_array)
         
@@ -121,25 +119,10 @@ class Pytaf:
                     sys.exit(-1)
             # now start the load test
             passed, failed = self.do_load_test(mapped_modules, config)
-        elif test != None:  # if --test is specified, try and get its params and run it
-            if test.find(",") >= 0: # multiple tests
-                ts = test.split(",")
-                for i in range(0, len(ts)):
-                    test = ts[i]
-                    if self.test_excluded(test, excluded_list) == False: 
-                        params = pytaf_utils.get_params(config, test)
-                        if params == None:
-                            print("could not find params for test %s" % test)
-                            sys.exit()
-                        else:
-                            status = self.do_test(mapped_modules, settings, test, params)
-                            if status == True:
-                                passed = passed + 1
-                            else:
-                                failed = failed + 1
-                    else:
-                        print("%s is on the excluded list" % test)
-            else: # just one test
+        elif options.test != None:  # if --test is specified, try and get the params and run each one
+            ts = options.test.split(",")
+            for i in range(0, len(ts)):
+                test = ts[i]
                 if self.test_excluded(test, excluded_list) == False: 
                     params = pytaf_utils.get_params(config, test)
                     if params == None:
@@ -209,10 +192,9 @@ class Pytaf:
                 result = methodToCall(args)
                 end_time = int(time.time())
                 elapsed_time = end_time - start_time
-                if DEBUG: print("result: %s" % result)
             except Exception as inst:
                 if DEBUG: print("exception from methodToCall")
-                if DEBUG: print(str(inst))
+                if DEBUG: print(sys.exc_info()[0])
                 continue
             
         if test_was_found == False:
@@ -253,9 +235,8 @@ class Pytaf:
         '''
         intent is to run tests randomly (on multiple threads) calculated by threads and rate, 
         for the period of duration (in minutes)
-        '''  
-           
-        # get list of all test names from the config file
+        '''           
+        # get a list of all the test method names from the config file
         tests = pytaf_utils.get_all_tests(config, modules, True)
         if DEBUG: print('found these tests: %s' % tests)
     
