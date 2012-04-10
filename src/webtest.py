@@ -11,13 +11,15 @@ from selenium import webdriver
 from selenium.webdriver.common.desired_capabilities import DesiredCapabilities
 
 DEBUG = sys.flags.debug
-    
-def test_web(args = {}):
+
+
+def test_web(args={}):
     try:
         # initialize the error strings array
         errors = []
 
-        # parse the global settings and test method params from the args provided
+        # parse the global settings and test method
+        # params from the args provided
         settings = args['settings']
         params = args['params']
 
@@ -31,10 +33,13 @@ def test_web(args = {}):
         else:
             print('found the google input element')
 
-        # call the utility method to verify the absence or errors or pack up the error messages if any
-        return pytaf_utils.verify(len(errors) == 0, 'there were errors: %s' % errors)     
+        # call the utility method to verify the absence or errors or
+        # pack up the error messages if any
+        return pytaf_utils.verify(len(errors) == 0,
+                                  'there were errors: %s' % errors)
     except Exception as inst:
-        if DEBUG: print(inst)
+        if DEBUG:
+            print(inst)
         # fail on any exception and include a stack trace
         return (False, pytaf_utils.formatExceptionInfo())
     finally:
