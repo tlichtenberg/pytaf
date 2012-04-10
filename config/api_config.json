@@ -10,7 +10,10 @@
           { "module": "apitest",
             "methods": 
             [
-               { "name": "test_api",  "params":  {} }      
+               { "name": "test_api",  "params":  {} },
+               { "name": "test_html_get",  "params":  {} },
+               { "name": "test_simple_get",  "params":  {} },
+               { "name": "test_simple_post",  "params":  {} }        
             ]
          }
      ],

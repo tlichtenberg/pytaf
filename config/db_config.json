@@ -1,0 +1,11 @@
+{
+   "db":
+   {
+     "db_type": "mysql",
+     "db_name": "automation",
+     "db_host": "localhost",
+     "db_port": "3306",
+     "db_user": "root",
+     "db_password": "5ecr3t!"
+   }
+ }
