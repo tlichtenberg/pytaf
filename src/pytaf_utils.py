@@ -19,6 +19,7 @@ from operator import itemgetter
 
 DEBUG = sys.flags.debug
 
+
 def verify(expression, message):
     ''' called by tests for pass and fail '''
     print(expression)
@@ -29,23 +30,27 @@ def verify(expression, message):
     else:
         error_message = ''
         return (True, error_message)
-    
+
+   
 def get_date_string(offset=0):
     ''' get the date, offset in days (1 for yesterday, 2 for two days ago'''
     d = date.today() - timedelta(offset)
     datestr = d.strftime('%m%d%y')
     return datestr
+
    
 def anystring_as_utf8(s, accept_utf8_input=False): # accept str or unicode, and output utf-8
         if type(s) is str:
             return s
         else:
             return s.encode('utf-8')
+
         
 def str2bool(v):
     '''convert string to boolean
     '''
     return v.lower() in ("yes", "true", "t", "1")
+
 
 def bool2str(v=True):
     '''convert boolean to string
@@ -54,6 +59,7 @@ def bool2str(v=True):
         return "true"
     else:
         return "false"
+
 
 def get_params(config, test):
     ''' 
@@ -71,6 +77,7 @@ def get_params(config, test):
                 return params
     return None
 
+
 def get_all_modules(config={}):
     ''' 
        get list of modules (python test files) from the test config file
@@ -85,7 +92,8 @@ def get_all_modules(config={}):
         pass
     return modules
 
-def get_all_tests(config, modules=[], load_test = False):
+
+def get_all_tests(config, modules=[], load_test=False):
     '''
         get an array of all the test names in the config file
         
@@ -147,7 +155,8 @@ def post_results(results = [], settings = {}, db_config={}, total_passed = 0, to
     
     mysql.close()
     conn.close()
-    
+
+   
 def formatExceptionInfo(level = 6):
     error_type, error_value, trbk = sys.exc_info()
     tb_list = traceback.format_tb(trbk, level)    

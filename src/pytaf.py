@@ -14,13 +14,16 @@ import _thread
 from load_runner import LoadRunnerManager
 
 DEBUG = sys.flags.debug
-    
+
+
 class Pytaf:
-    ''' Python3 test driver capable of running any arbitrary python methods in modules defined by json config files '''
+    ''' Python3 test driver capable of running any arbitrary python
+        methods in modules defined by json config files '''
     def __init__(self):
-        ''' results object is used for collecting test results for output and database reporting '''
+        ''' results object is used for collecting test results for output
+            and database reporting '''
         self.results = []
-        
+
     def setup(self, args):
         # Parse command line options
         parser = optparse.OptionParser()
@@ -30,44 +33,48 @@ class Pytaf:
         parser.add_option('-e', '--excluded', default=None, type='string')
         parser.add_option('-l', '--logfile', default=None, type='string')
         parser.add_option('-m', '--modules', default=None, type='string')
-        parser.add_option('-s', '--selenium_server', default=None, type='string')
-        parser.add_option('-t', '--test', default=None, type='string')  
-        parser.add_option('-u', '--url', default=None, type='string')  
-        parser.add_option('-y', '--test_type', default=None, type='string') 
-        parser.add_option('-z', '--loadtest_settings', default=None, type='string')     
+        parser.add_option('-s', '--selenium_server', default=None,
+                                                     type='string')
+        parser.add_option('-t', '--test', default=None, type='string')
+        parser.add_option('-u', '--url', default=None, type='string')
+        parser.add_option('-y', '--test_type', default=None, type='string')
+        parser.add_option('-z', '--loadtest_settings', default=None,
+                                                       type='string')
         options, args_out = parser.parse_args(args)
-    
+
         if options.config_file == None:
             print('-c (--config_file) is required')
             sys.exit(-1)
-        
+
         if options.logfile != None:
             ''' redirect stdout to the logfile '''
             f = open(options.logfile, "a", 0)
             sys.stdout = f
-        
+
         if options.excluded != None:
-            ''' build a list of tests explicitly excluded from the command-line option '''
-            excluded_list = options.excluded.split(',') # array of excluded test method names
+            ''' build a list of tests explicitly excluded from the
+            command-line option '''
+            excluded_list = options.excluded.split(',')
         else:
             excluded_list = None
-        
+
         ''' load the config file '''
         try:
             config_path = os.getenv('PYTAF_HOME') + os.sep + "config" + os.sep
-            f = open("%s%s" % (config_path,options.config_file), 'r').read()
-            config = json.loads(f)                             
+            f = open("%s%s" % (config_path, options.config_file), 'r').read()
+            config = json.loads(f)
         except:
             print(pytaf_utils.formatExceptionInfo())
-            print("problem with config file %s%s" % (config_path, options.config_file))
+            print("problem with config file %s%s" %
+                  (config_path, options.config_file))
             sys.exit()
-            
-        try: # try to open the default db_config file
+ 
+        try:  # try to open the default db_config file
             f2 = open("%s%s" % (config_path, "db_config.json"), 'r').read()
             db_config = json.loads(f2)
         except:
             db_config = {}
-                       
+
         # command-line -u overrides config file for url
         if options.url != None: 
             config['settings']['url'] = options.url # for browser tests
@@ -93,7 +100,8 @@ class Pytaf:
             modules_array = pytaf_utils.get_all_modules(config)
         else: # only load the specified module(s) from the config file
             modules_array = options.modules.split(",")
-        if DEBUG: print('modules: %s' % modules_array)
+        if DEBUG: 
+            print('modules: %s' % modules_array)
         mapped_modules = map(__import__, modules_array)
         
         passed = 0
@@ -193,8 +201,8 @@ class Pytaf:
                 end_time = int(time.time())
                 elapsed_time = end_time - start_time
             except Exception as inst:
-                if DEBUG: print("exception from methodToCall")
-                if DEBUG: print(sys.exc_info()[0])
+                if DEBUG: 
+                    print("exception from methodToCall: %s" % sys.exc_info()[0])
                 continue
             
         if test_was_found == False:
@@ -224,7 +232,7 @@ class Pytaf:
             else:
                 result_str = "RESULT ===> FAILED: %s, %s" % (test, pytaf_utils.anystring_as_utf8(error_message))
             if elapsed_time > 0:
-                result_str = result_str +  ", elapsed time: %s seconds" % str(elapsed_time)
+                result_str = "%s, elapsed time: %s seconds" % (result_str, str(elapsed_time))
             print("%s\n---------------" % result_str)
         except:
             print(pytaf_utils.formatExceptionInfo())
@@ -238,7 +246,8 @@ class Pytaf:
         '''           
         # get a list of all the test method names from the config file
         tests = pytaf_utils.get_all_tests(config, modules, True)
-        if DEBUG: print('found these tests: %s' % tests)
+        if DEBUG: 
+            print('found these tests: %s' % tests)
     
         manager = LoadRunnerManager(config, tests)
         tests_run, passed, failed = manager.start() 
@@ -254,5 +263,3 @@ class Pytaf:
 if __name__ == "__main__":
     pytaf = Pytaf()
     pytaf.setup(sys.argv[1:])
-
-    

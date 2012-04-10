@@ -1,0 +1,27 @@
+from distutils.core import setup
+import sys
+
+setup(name='pytaf',
+      version='1.0',
+      author='Tom Lichtenberg',
+      author_email='lichtenberg.tom@gmail.com',
+      url='https://github.com/tlichtenberg/pytaf',
+      download_url='https://github.com/tlichtenberg/pytaf',
+      description='lightweight, general-purpose test automation framework in Python 3',
+      long_description='lightweight, general-purpose test automation framework in Python 3',
+      package_dir={'': 'src'},
+      py_modules=['pytaf', 'pytaf_utils', 'apilib', 'apitest', 'load_runner',
+                  'weblib', 'webtest'],
+      provides=['pytaf'],
+      data_files=[ ('config', ['api_config.json', 'api_load_config.json', 'webtest_config.json', 'db_config.json'] )],
+      keywords='test automation',
+      license='MIT License',
+      classifiers=['Development Status :: 5 - Production/Stable',
+                   'Intended Audience :: Developers',
+                   'Natural Language :: English',
+                   'Operating System :: OS Independent',
+                   'Programming Language :: Python :: 3',
+                   'License :: OSI Approved :: MIT License',
+                   'Topic :: Software Development',
+                  ],
+     )

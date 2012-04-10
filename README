@@ -20,10 +20,10 @@ beautifulsoup4 => for lovely parsing of XML and/or HTML
 Setup notes:
 ------------
 
-installed on 64-bit Windows 7:
+I installed on 64-bit Windows 7:
   Python 3.2.2 from http://www.python.org/getit/releases/3.2.2/
   py3selenium2 from http://permalink.gmane.org/gmane.comp.web.selenium.devel/7933
-    (hopefully an official python3 binding for selenium will appear at some point, this one is missing some things)
+    (hopefully an official python3 binding for selenium will appear at some point; this one seems to be missing some things)
   pymysql from http://code.google.com/p/p
 
 ------------
@@ -55,7 +55,8 @@ you should see more or less this output:
 Configuration Files:
 --------------------
 
-You must pass a -c config_file.json argument to pytaf, and that file must exist in the PYTAF_HOME/config directory
+You must pass a "-c <config_file>.json" argument to pytaf, and that file must exist in the PYTAF_HOME/config directory
+All source files are assumed to live in the PYTAF_HOME/src directory
 
 The config file contains two sections, a global settings section, and a tests section. For example:
 
@@ -72,7 +73,7 @@ The config file contains two sections, a global settings section, and a tests se
             "module": "apitest",
             "methods": 
             [
-               { "name": "test_api",  "params":  {} }      
+               { "name": "test_api",  "params":  { "some_variable": "some_value" } }      
             ]
          }
      ]
@@ -114,6 +115,9 @@ option to exclude one or more (comma-separated) tests from the run.
 tests in the test config file, otherwise it will attempt to run the test(s) specified 
 (multiple tests are set with a comma-separated list of their names)
 -u, --url is used to override the url in the config file settings. 
+-y, --test_type is used to designate a 'load' test as opposed to a regular test, and can be leveraged for other specialized test types
+-z, --load_test_settings is used to override global load_test_settings, which are only for "-y load" tests, 
+and consists of a colon-separated string designating exactly five fields => duration:max_threads:ramp_steps:ramp_interval:throttle_rate (e.g. 3600:500:10:30:1)
 
 ---------------------
 Test Method Template:
@@ -138,6 +142,7 @@ Finally, a finally block is implemented for any cleanup operations.
 
 For example:
 
+from weblib import WebLib
 def test_web(args = {}):
     try:
         # initialize the error strings array
@@ -147,11 +152,11 @@ def test_web(args = {}):
         settings = args['settings']
         params = args['params']
 
-        # some selenium specific test stuff ...
+        # do some selenium specific test stuff ...
         goto_url = params.get('url', 'http://www.google.com')
-        driver = init_selenium(settings)
-        driver.get(goto_url)
-        element = driver.find_element_by_id('gbqfq')
+        lib = WebLib(settings)
+        lib.driver.get(goto_url)
+        element = lib.driver.find_element_by_id('gbqfq')
         if element == None:
             errors.append('did not find the google input element')
         else:
@@ -164,7 +169,7 @@ def test_web(args = {}):
         return (False, pytaf_utils.formatExceptionInfo())
     finally:
         # cleanup
-        driver.quit()
+        lib.driver.quit()
 
 
 
