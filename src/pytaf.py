@@ -80,6 +80,7 @@ class Pytaf:
             config['settings']['url'] = options.url  # for browser tests
 
         # command-line -b overrides config file for browser
+        # can be in the form of 'Firefox' or 'Firefox,10,WINDOWS'
         if options.browser != None:
             config['settings']['browser'] = options.browser
 
@@ -113,7 +114,7 @@ class Pytaf:
              the command-line may override load_test_settings with
              -z --loadtest_settings in the form of
              duration:max_threads:ramp_steps:ramp_interval:throttle_rate
-             e.g. 3600:500:10:30:1
+             e.g. 3600,500,10,30,1
              which would run the load test for 1 hour (3600 seconds)
              ramping up to a total of 500 threads in 10 steps
              (each step would add 50 threads (500/10))
@@ -124,7 +125,7 @@ class Pytaf:
              that amount (in seconds) between chunks of test case allocations
             '''
             if options.loadtest_settings != None:
-                p = options.loadtest_settings.split(":")
+                p = options.loadtest_settings.split(",")
                 if len(p) == 5:
                     config['settings']['load_test_settings'] = \
                     {"duration": int(p[0]),

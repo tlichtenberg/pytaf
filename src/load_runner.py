@@ -20,7 +20,11 @@ class LoadRunnerManager:
         self.config = config
         self.settings = config['settings']
         self.url = self.settings['url']
-        load_test_settings = self.settings['load_test_settings']
+        try:
+            load_test_settings = self.settings['load_test_settings']
+        except:
+            print('error. load_test_settings were not found in the configuration: %s' % config)
+            sys.exit(-1)
         self.max_threads = load_test_settings['max_threads']
         self.ramp_steps = load_test_settings['ramp_steps']
         self.ramp_interval = load_test_settings['ramp_interval']

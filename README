@@ -22,8 +22,9 @@ Setup notes:
 
 I installed on 64-bit Windows 7:
   Python 3.2.2 from http://www.python.org/getit/releases/3.2.2/
-  py3selenium2 from http://permalink.gmane.org/gmane.comp.web.selenium.devel/7933
+  py3selenium2 from http://groups.google.com/group/selenium-developers/browse_thread/thread/b3310ce3179814e1
     (hopefully an official python3 binding for selenium will appear at some point; this one seems to be missing some things)
+    (unzip and copy it into Python32\Lib\site-packages)
   pymysql from http://code.google.com/p/p
 
 ------------
@@ -42,7 +43,7 @@ you should see more or less this output:
    starting test: test_api
    start time:    2012-04-06 11:31:52.425000
   ------------
-  some function you got here!
+  this is one dandy function you got here!
   RESULT ===> PASSED: test_api
   ---------------
   ---------------
@@ -104,7 +105,8 @@ You can also use the -t option to specify one or more (comma-separated) tests fr
 config file, to run only a subset of the tests defined. Conversely, you can use the -e
 option to exclude one or more (comma-separated) tests from the run.
 
--b, --browser is used for Selenium/Webdriver tests to specify the browser type
+-b, --browser is used for Selenium/Webdriver tests to specify the browser type, and can be in the form of '*firefox' or
+'*firefox,10,WINDOWS' (specifying the version and platform as well as browser name)
 -c, --config is required and all other arguments are optional. The config file must reside in $PYTAF_HOME/config
 -d, --db defines whether to write the test results to a database. the default is False
 -e, --excluded to optionally exclude a test or tests (comma-separated list)
@@ -171,6 +173,20 @@ def test_web(args = {}):
         # cleanup
         lib.driver.quit()
 
+-------------
+load testing:
+-------------
+
+Pytaf includes a load testing option through which test cases can be run concurrently and in parallel. The
+command-line option '-y load' is sufficient to run this option with default settings. Load test settings
+can be specified in the 'settings' element in a test configuration file.
+
+the command-line may also override load_test_settings with -z --loadtest_settings, which are in the form of:
+     duration,max_threads,ramp_steps,ramp_interval,throttle_rate e.g. 3600,500,10,30,1
+which would run the load test for 1 hour (3600 seconds) ramping up to a total of 500 threads in 10 steps
+(each step would add 50 threads (500/10)) and these batches of threads would be added in
+30 second installments. The final value (throttle_rate=1) is used tobrake the entire load test operation 
+by sleeping in each thread for that amount (in seconds) between chunks of test case allocations.
 
 
 
