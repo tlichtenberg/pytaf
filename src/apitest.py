@@ -1,4 +1,6 @@
-# -*- coding: UTF-8 -*-
+#!/usr/bin/python
+# -*- coding: utf-8 -*-
+#pylint: disable-msg=R0201,W0102,R0913,R0914,C0111,F0401,W0702
 '''
     api tests
 '''
@@ -10,12 +12,12 @@ from bs4 import BeautifulSoup
 
 
 def test_api(args={}):
-    # required test_config fields
-    settings = args['settings']
-    url = settings['url']
-
+    ''' generic test showing params and settings extraction from args '''
+    settings = args['settingss']
+    params = args['params']
     try:
         apilib = ApiLib()
+        print(settings, params)
         apilib.some_function()
         return (True, '')
     except:
@@ -24,22 +26,21 @@ def test_api(args={}):
 
 def test_html_get(args={}):
     ''' example using BeautifulSoup to parse html '''
+    params = args['params']
     settings = args['settings']
-    url = settings['url']
-
+    url = params.get('url',"www.google.com")
     try:
         errors = []
         headers = {}
-        url = "www.google.com"
-        u = "/index.html"
+        locator = "/index.html"
         lib = ApiLib()
-        response = lib.do_get(url, u, args['settings'], headers, False)
+        response = lib.do_get(url, locator, settings, headers, False)
         data = response['data']
         soup = BeautifulSoup(data)
         divs = soup.findAll('div')
-        for d in divs:
+        for div in divs:
             try:
-                print("div style = %s" % d['style'])
+                print("div style = %s" % div['style'])
             except:
                 pass
         return pytaf_utils.verify(len(errors) == 0,
@@ -72,13 +73,15 @@ def test_simple_get(args={}):
         http://httpbin.org/stream/:n Streams n–100 lines.
         http://httpbin.org/delay/:n Delays responding for n–10 seconds.
 '''
+    params = args['params']
+    settings = args['settings']
+    url = params.get('url',"httpbin.org")
     try:
         errors = []
         headers = {}
-        url = "httpbin.org"
-        u = "/get"
+        locator = "/get"
         lib = ApiLib()
-        response = lib.do_get(url, u, args['settings'], headers, False)
+        response = lib.do_get(url, locator, settings, headers, False)
         data = json.loads(response['data'])
         print(data)
         origin = data.get('origin', None)
@@ -95,15 +98,17 @@ def test_simple_get(args={}):
 
 def test_simple_post(args={}):
     ''' example of json parsing from http post '''
+    params = args['params']
+    settings = args['settings']
+    url = params.get('url',"httpbin.org")
     try:
         errors = []
         headers = {}
         request = ''
-        url = "httpbin.org"
-        u = "/post"
+        locator = "/post"
         lib = ApiLib()
-        response = lib.do_post(url, u, request,
-                               args['settings'], headers, False)
+        response = lib.do_post(url, locator, request,
+                               settings, headers, False)
         data = json.loads(response['data'])
         print(data)
         origin = data.get('origin', None)

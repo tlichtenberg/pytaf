@@ -1,5 +1,6 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
+#pylint: disable-msg=R0201,W0102,R0913,R0914,C0111,F0401,W0702
 '''
     web tests (selenium webdriver tests)
 '''
@@ -7,8 +8,6 @@
 import sys
 import pytaf_utils
 from weblib import WebLib
-from selenium import webdriver
-from selenium.webdriver.common.desired_capabilities import DesiredCapabilities
 
 DEBUG = sys.flags.debug
 

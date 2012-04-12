@@ -1,3 +1,6 @@
+#!/usr/bin/python
+# -*- coding: utf-8 -*-
+#pylint: disable-msg=R0201,W0102,R0913,R0914,C0111,F0401,W0702
 '''
     test driver
 '''
@@ -10,7 +13,6 @@ import json
 import pytaf_utils
 import time
 import datetime
-import _thread
 from load_runner import LoadRunnerManager
 
 DEBUG = sys.flags.debug
@@ -48,8 +50,8 @@ class Pytaf:
 
         if options.logfile != None:
             ''' redirect stdout to the logfile '''
-            f = open(options.logfile, "a", 0)
-            sys.stdout = f
+            the_file = open(options.logfile, "a", 0)
+            sys.stdout = the_file
 
         if options.excluded != None:
             ''' build a list of tests explicitly excluded from the
@@ -61,8 +63,8 @@ class Pytaf:
         ''' load the config file '''
         try:
             config_path = os.getenv('PYTAF_HOME') + os.sep + "config" + os.sep
-            f = open("%s%s" % (config_path, options.config_file), 'r').read()
-            config = json.loads(f)
+            the_file = open("%s%s" % (config_path, options.config_file), 'r').read()
+            config = json.loads(the_file)
         except:
             print(pytaf_utils.formatExceptionInfo())
             print("problem with config file %s%s" %
@@ -70,8 +72,8 @@ class Pytaf:
             sys.exit()
 
         try:  # try to open the default db_config file
-            f2 = open("%s%s" % (config_path, "db_config.json"), 'r').read()
-            db_config = json.loads(f2)
+            the_file = open("%s%s" % (config_path, "db_config.json"), 'r').read()
+            db_config = json.loads(the_file)
         except:
             db_config = {}
 
@@ -88,9 +90,9 @@ class Pytaf:
         # host and port settings
         if options.selenium_server != None:
             if options.selenium_server.find(":") >= 0:
-                g = options.selenium_server.split(":")
-                config['settings']['selenium_host'] = g[0]
-                config['settings']['selenium_port'] = int(g[1])
+                sel_list = options.selenium_server.split(":")
+                config['settings']['selenium_host'] = sel_list[0]
+                config['settings']['selenium_port'] = int(sel_list[1])
             else:
                 config['settings']['selenium_host'] = options.selenium_server
 
@@ -125,14 +127,14 @@ class Pytaf:
              that amount (in seconds) between chunks of test case allocations
             '''
             if options.loadtest_settings != None:
-                p = options.loadtest_settings.split(",")
-                if len(p) == 5:
+                load_list = options.loadtest_settings.split(",")
+                if len(load_list) == 5:
                     config['settings']['load_test_settings'] = \
-                    {"duration": int(p[0]),
-                     "max_threads": int(p[1]),
-                     "ramp_steps": int(p[2]),
-                     "ramp_interval": int(p[3]),
-                     "throttle_rate": int(p[4])}
+                    {"duration": int(load_list[0]),
+                     "max_threads": int(load_list[1]),
+                     "ramp_steps": int(load_list[2]),
+                     "ramp_interval": int(load_list[3]),
+                     "throttle_rate": int(load_list[4])}
                 else:
                     print('load test settings are not complete.')
                     print('they must be in the form of' \
@@ -142,9 +144,9 @@ class Pytaf:
             passed, failed = self.do_load_test(mapped_modules, config)
         # if --test is specified, try and get the params and run each one
         elif options.test != None:
-            ts = options.test.split(",")
-            for i in range(0, len(ts)):
-                test = ts[i]
+            test_list = options.test.split(",")
+            for i in range(0, len(test_list)):
+                test = test_list[i]
                 if self.test_excluded(test, excluded_list) == False:
                     params = pytaf_utils.get_params(config, test)
                     if params == None:
@@ -182,11 +184,11 @@ class Pytaf:
         print("Failed:    %s" % failed)
 
         print_results = []
-        for r in self.results:
-            print_results.append(r['status'] + " " + r['test_method'])
+        for result in self.results:
+            print_results.append(result['status'] + " " + result['test_method'])
 
-        for r in sorted(print_results):
-            print(r)
+        for result in sorted(print_results):
+            print(result)
 
         # post results to the database
         if pytaf_utils.str2bool(options.db) == True:
@@ -195,8 +197,8 @@ class Pytaf:
 
     def test_excluded(self, test, excluded_list):
         if excluded_list != None:
-            for e in excluded_list:
-                if test == e:
+            for excluded in excluded_list:
+                if test == excluded:
                     return True
         return False
 
@@ -205,19 +207,19 @@ class Pytaf:
         start_time = end_time = elapsed_time = 0
         found_module = None
         test_was_found = False
-        for m in modules:
+        for module in modules:
             try:
                 if DEBUG:
-                    print("do test %s from module %s" % (test, m))
-                methodToCall = getattr(m, test)
-                found_module = str(m)
+                    print("do test %s from module %s" % (test, module))
+                method_to_call = getattr(module, test)
+                found_module = str(module)
                 test_was_found = True
                 start_time = int(time.time())
                 print("------------\n starting test: %s" % test)
                 print(" start time:    %s" % datetime.datetime.now())
                 print("------------")
                 args = {"settings": settings, "params": params}
-                result = methodToCall(args)
+                result = method_to_call(args)
                 end_time = int(time.time())
                 elapsed_time = end_time - start_time
             except Exception as inst:

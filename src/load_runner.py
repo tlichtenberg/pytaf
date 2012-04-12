@@ -1,3 +1,7 @@
+#!/usr/bin/python
+# -*- coding: utf-8 -*-
+#pylint: disable-msg=R0201,W0102,R0913,R0914,C0111,F0401,W0702,R0902
+
 import pytaf_utils
 import random
 from random import choice
@@ -51,15 +55,15 @@ class LoadRunnerManager:
         stop = the_last_time + int(self.duration)
         ramp_count = threads_started = initial_threads
         while the_time < stop:
-            for n in range(self.max_threads):
+            for iterations in range(self.max_threads):
                 test = choice(self.tests)
-                t = LoadRunner(self, self.config, test, self.throttle_rate)
-                pool.addJob(t.run)
+                new_thread = LoadRunner(self, self.config, test, self.throttle_rate)
+                pool.add_job(new_thread.run)
                 # twiddle with this to control the rate
                 time.sleep(float(self.throttle_rate) / 10.0)
                 try:
-                    t = self.tests_run[test]
-                    self.tests_run[test] = t + 1
+                    num_run = self.tests_run[test]
+                    self.tests_run[test] = num_run + 1
                 except:
                     self.tests_run[test] = 1
                     continue
@@ -77,7 +81,7 @@ class LoadRunnerManager:
                     if DEBUG:
                         print("LoadRunnerManager: adding %s threads" %
                               initial_threads)
-                    pool.addThreads(initial_threads)
+                    pool.add_threads(initial_threads)
                     ramp_count = 0
                     threads_started = threads_started + initial_threads
                 else:
@@ -85,7 +89,7 @@ class LoadRunnerManager:
 
             the_time = time.time()
             print('thread pool queue size = %s' %
-                  int(pool.getApproximateQueueSize()))
+                  int(pool.get_approximate_queue_size()))
             print("LoadRunnerManager: time remaining: %s seconds" %
                   (stop - the_time))
         pool.stop()
@@ -112,11 +116,11 @@ class LoadRunner():
         if params != None:
             try:
                 from pytaf import Pytaf
-                self.pytaf = Pytaf()
+                pytaf_instance = Pytaf()
                 ''' instantiate the Pytaf.do_test method using reflection
                     and then invoke it with parameters '''
-                methodToCall = getattr(Pytaf, 'do_test')
-                result = methodToCall(self.pytaf, self.modules,
+                method_to_call = getattr(Pytaf, 'do_test')
+                result = method_to_call(pytaf_instance, self.modules,
                                       self.settings, self.test, params)
                 if result == True:
                     self.manager.passed()
@@ -140,19 +144,19 @@ class ThreadPool:
 
         # Start the initial threads, waiting on the empty Queue
         for i in range(int(self.max_threads)):
-            self.threads.append(_thread.start_new_thread(self.threadFunction,
+            self.threads.append(_thread.start_new_thread(self.thread_function,
                                                          ()))
 
-    def addThreads(self, num_threads=1):
+    def add_threads(self, num_threads=1):
         ''' adds more threads to the pool '''
         if DEBUG:
             print('ThreadPool: adding %s threads' % num_threads)
         self.max_threads = self.max_threads + num_threads
         for i in range(int(num_threads)):
-            self.threads.append(_thread.start_new_thread(self.threadFunction,
+            self.threads.append(_thread.start_new_thread(self.thread_function,
                                                          ()))
 
-    def addJob(self, function, *args, **kwargs):
+    def add_job(self, function, *args, **kwargs):
         ''' puts a task into the queue '''
         try:
             if self.queue.qsize() < self.max_threads:
@@ -160,7 +164,7 @@ class ThreadPool:
         except:
             pass  # queue is full, let it go
 
-    def threadFunction(self):
+    def thread_function(self):
         ''' fetches a task from the queue and invokes it '''
         while (not self.stopping):
             try:
@@ -172,10 +176,10 @@ class ThreadPool:
             except Exception as inst:
                 pass  # queue is full, let it go
 
-    def probablyIdle(self):
+    def probably_idle(self):
         return self.queue.empty()
 
-    def getApproximateQueueSize(self):
+    def get_approximate_queue_size(self):
         return self.queue.qsize()
 
     def stop(self):

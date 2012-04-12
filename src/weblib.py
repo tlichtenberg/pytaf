@@ -1,9 +1,9 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
-
+#pylint: disable-msg=R0201,W0102,R0913,R0914,C0111,F0401,W0702
 from selenium import webdriver
 from selenium.webdriver.common.desired_capabilities import DesiredCapabilities
-
+import pytaf_utils
 
 class WebLib:
     def __init__(self, settings):
@@ -24,23 +24,23 @@ class WebLib:
         print("webdriver_url = %s" % webdriver_url)
         try:
             if browser_name.find("firefox") >= 0 or browser_name.find("*chrome") >= 0:
-                dc = DesiredCapabilities.FIREFOX              
+                capabilities = DesiredCapabilities.FIREFOX              
             elif browser_name.find("*googlechrome") >= 0:
-                dc = DesiredCapabilities.CHROME
-                dc["chrome.switches"] = ["--ignore-certificate-errors"]
+                capabilities = DesiredCapabilities.CHROME
+                capabilities["chrome.switches"] = ["--ignore-certificate-errors"]
             elif browser_name.find("*mock") >= 0:
-                dc = DesiredCapabilities.HTMLUNIT
+                capabilities = DesiredCapabilities.HTMLUNIT
             elif browser_name.find("android") >= 0:
-                dc = DesiredCapabilities.ANDROID
+                capabilities = DesiredCapabilities.ANDROID
             elif browser_name.find("*ie") >= 0:
-                dc = DesiredCapabilities.INTERNETEXPLORER
+                capabilities = DesiredCapabilities.INTERNETEXPLORER
             else:  # default to Firefox
-                dc = DesiredCapabilities.FIREFOX
+                capabilities = DesiredCapabilities.FIREFOX
                              
             if browser_version != '':
-                dc['version'] = browser_version
+                capabilities['version'] = browser_version
             if browser_platform != '':
-                dc['platform'] = browser_platform
-            self.driver = webdriver.Remote(webdriver_url, dc)
+                capabilities['platform'] = browser_platform
+            self.driver = webdriver.Remote(webdriver_url, capabilities)
         except:
             print(pytaf_utils.formatExceptionInfo())

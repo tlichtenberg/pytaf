@@ -1,17 +1,15 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
+#pylint: disable-msg=R0201,W0102,R0913,R0914,C0111,F0401,W0702
 '''
     library for api calls
 '''
 import os
 import sys
 import http.client as httplib
-import urllib as urllib2
-import urllib as urllib
 import _thread
 import time
 import pytaf_utils
-from bs4 import BeautifulSoup
 
 DEBUG = sys.flags.debug
 
@@ -25,20 +23,20 @@ class ApiLib:
         print("this is one dandy function you got here!")
         return True
 
-    def do_get(self, url, u, settings={}, headers={}, https=True):
+    def do_get(self, url, locator, settings={}, headers={}, https=True):
         '''
             use for all get methods
             returns the response data
         '''
         api_qa_cert = os.getenv("PYTAF_HOME") + "/resources/cert.pem"
-        CERT_FILE = settings.get("cert_file", api_qa_cert)
+        certificate_file = settings.get("cert_file", api_qa_cert)
         host = settings.get('host', url)
         cookie = settings.get('cookie', None)
         content_type = settings.get('content_type', "text/xml")
         print("*** GET *** (thr: %s, t: %s) %s" %
-              (_thread.get_ident(), time.time(), url + u))
+              (_thread.get_ident(), time.time(), url + locator))
         if https == True:
-            conn = httplib.HTTPSConnection(url, cert_file=CERT_FILE)
+            conn = httplib.HTTPSConnection(url, cert_file=certificate_file)
         else:
             conn = httplib.HTTPConnection(url)
         headers["Content-type"] = content_type
@@ -47,7 +45,7 @@ class ApiLib:
         if cookie != None:
             headers['Set-Cookie'] = cookie
         start_time = time.time()
-        conn.request("GET", u, '', headers)
+        conn.request("GET", locator, '', headers)
         response = conn.getresponse()
         end_time = time.time()
         if DEBUG:
@@ -55,23 +53,24 @@ class ApiLib:
                 (_thread.get_ident(), round(float(end_time - start_time), 2)))
         if DEBUG:
             print(response.status, response.reason)
-        d = response.read().decode()  # read() returns a bytes object
+        data = response.read().decode()  # read() returns a bytes object
         if DEBUG:
-            print(d)
-        return {"data": d, "status": response.status,
+            print(data)
+        return {"data": data, "status": response.status,
                  "reason": response.reason}
 
-    def do_post(self, url, u, request, settings={}, headers={}, https=True):
+    def do_post(self, url, locator, request, settings={}, 
+                headers={}, https=True):
         '''
             can be used for non multi-part posts
        '''
         print("*** POST *** (thr: %s, t: %s) %s" %
-             (_thread.get_ident(), time.time(), url + u))
+             (_thread.get_ident(), time.time(), url + locator))
         params = pytaf_utils.anystring_as_utf8(request)
         if DEBUG:
             print("params:", params)
         api_qa_cert = os.getenv("PYTAF_HOME") + "/resources/cert.pem"
-        CERT_FILE = settings.get("cert_file", api_qa_cert)
+        certificate_file = settings.get("cert_file", api_qa_cert)
         host = settings.get('host', url)
         cookie = settings.get('cookie', None)
         content_type = settings.get('content_type', "text/xml")
@@ -83,11 +82,11 @@ class ApiLib:
         if DEBUG:
             print(headers)
         if https == True:
-            conn = httplib.HTTPSConnection(url, cert_file=CERT_FILE)
+            conn = httplib.HTTPSConnection(url, cert_file=certificate_file)
         else:
             conn = httplib.HTTPConnection(url)
         start_time = time.time()
-        conn.request("POST", u, params, headers)
+        conn.request("POST", locator, params, headers)
         response = conn.getresponse()
         end_time = time.time()
         if DEBUG:
@@ -95,18 +94,18 @@ class ApiLib:
                  (_thread.get_ident(), round(float(end_time - start_time), 2)))
         if DEBUG:
             print(response.status, response.reason)  # response.getheaders()
-        d = response.read().decode()  # read() returns a bytes object
+        data = response.read().decode()  # read() returns a bytes object
         if DEBUG:
-            print (d)
-        return {"data": d, "status": response.status,
+            print (data)
+        return {"data": data, "status": response.status,
                 "reason": response.reason}
 
-    def process_url(u):
+    def process_url(self, url):
         '''
             make the url python-http-happy by stripping off the front part
         '''
-        if u.find("http://") >= 0:
-            u = u[7:]
-        if u.find("https://") >= 0:
-            u = u[8:]
-        return u
+        if url.find("http://") >= 0:
+            url = url[7:]
+        if url.find("https://") >= 0:
+            url = url[8:]
+        return url
